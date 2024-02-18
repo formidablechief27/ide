@@ -179,6 +179,7 @@ public class IDEController {
 
         try {
             StringBuilder result = future.get(5, TimeUnit.SECONDS); // 5 seconds timeout
+            sourceFile.delete();
             return result;
         } catch (Exception e) {
             System.out.println("Time Out occurred ");
