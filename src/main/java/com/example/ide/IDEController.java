@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -123,7 +124,9 @@ public class IDEController {
 	}
 	
 	public StringBuilder run_cpp(String f_code, String input) {
-    	File sourceFile = new File("main.cpp");
+		File sourceFile = new File("main.cpp");
+    	Random rand = new Random();
+    	int num = rand.nextInt(Integer.MAX_VALUE);
         FileWriter writer;
         try {
             writer = new FileWriter(sourceFile);
@@ -132,7 +135,7 @@ public class IDEController {
         } catch (IOException e1) {
             e1.printStackTrace();
         }
-        ProcessBuilder processBuilder = new ProcessBuilder("g++", "-O0" , sourceFile.getPath(), "-o", "output");
+        ProcessBuilder processBuilder = new ProcessBuilder("g++", "-O0" , sourceFile.getPath(), "-o", "output" + num);
         Process compileProcess;
 		try {
 			compileProcess = processBuilder.start();
@@ -147,7 +150,7 @@ public class IDEController {
 		StringBuilder output = new StringBuilder();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<StringBuilder> future = executor.submit(() -> {
-            ProcessBuilder processbuilder = new ProcessBuilder("./output");
+            ProcessBuilder processbuilder = new ProcessBuilder("./output" + num);
 			processbuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
 			processbuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
 			long start = System.currentTimeMillis();

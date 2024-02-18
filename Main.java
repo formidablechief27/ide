@@ -163,6 +163,5 @@ public class Main {
     		ftree.update((int)i, cal);
     	}
     	pl(ftree.query(1, n));
-      pl("kuch aur maybe");
     }
 } 
