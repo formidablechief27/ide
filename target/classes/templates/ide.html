@@ -197,6 +197,14 @@
                         formData.append("input", inp);
                         formData.append("language", lang);
                         console.log(lang);
+                        var area = "output" + (index + 1); // Adjust the index as needed
+                        console.log(area);
+                        var outputElement = document.getElementById(area); // Use the actual ID here
+                        if (outputElement) {
+                            outputElement.value = "Running ... ";
+                        } else {
+                            console.error('Textarea element not found.');
+                        }
                         var xhr = new XMLHttpRequest();
                         xhr.open("POST", "/run-code", true);
                         xhr.onreadystatechange = function () {
