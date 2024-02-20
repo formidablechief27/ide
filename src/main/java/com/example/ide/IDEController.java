@@ -30,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,7 +45,10 @@ public class IDEController {
 	}
 	
 	@PostMapping("/run-code")
-	public ResponseEntity<String> run_code(@RequestParam String code, @RequestParam String input, @RequestParam String language){
+	public ResponseEntity<String> runCode(@RequestBody Map<String, String> requestPayload) {
+	    String code = requestPayload.get("code");
+	    String input = requestPayload.get("input");
+	    String language = requestPayload.get("language");
 		try {code = URLDecoder.decode(code, "UTF-8");}
 		catch (UnsupportedEncodingException e) {e.printStackTrace();}
 		System.out.println("Language Selected => " + language);
@@ -52,6 +56,7 @@ public class IDEController {
 		StringBuilder f_output = new StringBuilder();
 		if(language.equals("Java")) f_output = run(code, input);
 		else if(language.equals("C++")) f_output = run_cpp(code, input); 
+		else f_output = runpy(code, input);
 		Map<String, Object> responseMap = new HashMap<>();
 		responseMap.put("output", f_output.toString());
 	    ObjectMapper objectMapper = new ObjectMapper();
@@ -235,7 +240,7 @@ public class IDEController {
             }
         });
         try {
-            StringBuilder result = future.get(20, TimeUnit.SECONDS); // 5 seconds timeout
+            StringBuilder result = future.get(5, TimeUnit.SECONDS); // 5 seconds timeout
             return result;
         } catch (Exception e) {
             future.cancel(true);

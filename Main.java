@@ -136,32 +136,19 @@ public class Main {
     }	
 
     // This one's for you ;)
-    public void solve() {
-    	int n = ini();
-    	int m = ini();
-    	long a[] = new long[n + 10];
-    	long max[] = new long[n];
-    	for(int i=0;i<m;i++) {
-    		int l = ini();
-    		int r = ini();
-    		max[l-1] = max(max[l-1], r);
-    		a[l]++;
-    		a[r+1]--;
+    public void solve() {	
+    	long n = in();
+    	long k = in();
+    	long op = 1;
+    	while(true) {
+    		long first = ceil(n, 2L);
+    		if(k <= first) {
+    			pl((op*2)*(k - 1L) + op);
+    			return;
+    		}
+    		n -= first;
+    		k -= first;
+    		op *= 2;
     	}
-    	SegmentTreeMax tree = new SegmentTreeMax(max);
-    	long ans[] = new long[n];
-    	SegmentTreeMax ftree = new SegmentTreeMax(ans);
-    	TreeMap<Long, Long> map = new TreeMap<>();
-    	long sum = 0;
-    	for(long i=1;i<=n;i++) {
-    		sum += a[(int)i];
-    		map.put(i, sum);
-    	}
-    	for(long i=n;i>=1;i--) {
-    		long fmax = tree.query(1, (int)i);
-    		long cal = map.get(i) + ftree.query((int)(fmax + 1), n);
-    		ftree.update((int)i, cal);
-    	}
-    	pl(ftree.query(1, n));
     }
 } 
