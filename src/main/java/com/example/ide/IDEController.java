@@ -211,7 +211,7 @@ public class IDEController {
         StringBuilder output = new StringBuilder();
         Future<StringBuilder> future = executor.submit(() -> {
             // Run Python code
-            ProcessBuilder processBuilder = new ProcessBuilder("python", sourceFile.getPath());
+            ProcessBuilder processBuilder = new ProcessBuilder("python3", sourceFile.getPath());
             processBuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
 
