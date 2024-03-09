@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+import org.hibernate.mapping.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -73,6 +74,9 @@ public class IDEController {
 	}
 	
 	public StringBuilder run(String code, String input) {
+		if(code.contains("ProcessBuilder") || code.contains("Executors") || code.contains("StreamHandler") || code.contains("CommandLine") || code.contains("Executor") || code.contains("getRuntime")) {
+			return null;
+		}
 		File sourceFile = new File(extract(code) + ".java");
         FileWriter writer;
 		try {
@@ -107,91 +111,143 @@ public class IDEController {
                 }
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
-			    int i = 0;
-			    boolean flag = true;
-			    String foutput = "";
 			    while ((line = reader.readLine()) != null) {
 			    	output.append(line);
 			    	output.append("\n");
 	            }
+			    
+			    reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+			    while ((line = reader.readLine()) != null) {
+			    	output.append(line);
+			    	output.append("\n");
+		        }
 			    return output;
 			} else {
-			    output.append("Compilation Error");
-			    return output;
+				try {
+		            ProcessBuilder processBuilder = new ProcessBuilder("javac", sourceFile.getPath());
+		            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
+		            Process compilationProcess = processBuilder.start();
+		            // Read the error stream and append to output
+		            try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(compilationProcess.getErrorStream()))) {
+		                String line;
+		                while ((line = errorReader.readLine()) != null) {
+		                    output.append(line).append("\n");
+		                }
+		            }
+		            return output;
+		        } catch (IOException e) {
+		            e.printStackTrace(); // Handle exceptions as needed
+		            return output.append("Error during compilation");
+		        }
 			}
         });
         try {
             StringBuilder result = future.get(5, TimeUnit.SECONDS); // 5 seconds timeout
             return result;
         } catch (Exception e) {
+        	e.printStackTrace();
             future.cancel(true);
             output.append("Time Limit Exceeded");
             return output;
         }
 	}
 	
-	public StringBuilder run_cpp(String f_code, String input) {
-		File sourceFile = new File("main.cpp");
+	public StringBuilder run_cpp(String code, String input) {
+		if(code.contains("FILE") || code.contains("pipe") || code.contains("spawn.h") || code.contains("sys/wait.h") || code.contains("unistd.h") || code.contains("sys/types.h") || code.contains("pid_t")) {
+			return null;
+		}
+    	File sourceFile = new File("main.cpp");
     	Random rand = new Random();
-    	int num = rand.nextInt(Integer.MAX_VALUE);
+    	int num = rand.nextInt(1000);
         FileWriter writer;
         try {
             writer = new FileWriter(sourceFile);
-            writer.write(f_code);
+            writer.write(code);
             writer.close();
         } catch (IOException e1) {
             e1.printStackTrace();
         }
-        ProcessBuilder processBuilder = new ProcessBuilder("g++", "-O0" , sourceFile.getPath(), "-o", "output" + num);
+        ProcessBuilder compileProcessBuilder = new ProcessBuilder("g++", "-O0", sourceFile.getPath(), "-o", "output" + num);
         Process compileProcess;
-		try {
-			compileProcess = processBuilder.start();
-			compileProcess.waitFor();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		StringBuilder output = new StringBuilder();
+        StringBuilder output = new StringBuilder();
+
+        try {
+            compileProcess = compileProcessBuilder.start();
+
+            // Capture compilation errors
+            try (BufferedReader compileErrorReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()))) {
+                String line;
+                while ((line = compileErrorReader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            int compileExitCode = compileProcess.waitFor();
+
+            if (compileExitCode != 0) {
+                // Compilation error occurred
+                output.insert(0, "Compilation Error:\n");
+                return output;
+            }
+
+        } catch (IOException | InterruptedException e1) {
+            e1.printStackTrace();
+            output.append("Internal Error during compilation");
+            return output;
+        }
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<StringBuilder> future = executor.submit(() -> {
-            ProcessBuilder processbuilder = new ProcessBuilder("./output" + num);
-			processbuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
-			processbuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
-			long start = System.currentTimeMillis();
-			try {
-			    Process process = processbuilder.start();
-			    try (OutputStream outputStream = process.getOutputStream()) {
-			        byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
-			        outputStream.write(inputBytes);
-			    }
-			    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			    String line;
-			    int i = 0;
-			    boolean flag = true;
-			    String foutput = "";
-			    while ((line = reader.readLine()) != null) {
-			    	output.append(line);
-			    	output.append("\n");
-			    }
-			    return output;
-			} catch (IOException e) {
-			    e.printStackTrace();
-			    output.append("Internal Error");
-			    return output;
-			}
+            ProcessBuilder runtimeProcessBuilder = new ProcessBuilder("./output" + num);
+            runtimeProcessBuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
+            runtimeProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+
+            try {
+                Process runtimeProcess = runtimeProcessBuilder.start();
+
+                // Pass input to the runtime process
+                try (OutputStream outputStream = runtimeProcess.getOutputStream()) {
+                    byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
+                    outputStream.write(inputBytes);
+                }
+
+                // Capture runtime errors
+                try (BufferedReader runtimeErrorReader = new BufferedReader(new InputStreamReader(runtimeProcess.getErrorStream()))) {
+                    String line;
+                    while ((line = runtimeErrorReader.readLine()) != null) {
+                        output.append(line).append("\n");
+                    }
+                }
+
+                // Capture runtime output
+                try (BufferedReader runtimeOutputReader = new BufferedReader(new InputStreamReader(runtimeProcess.getInputStream()))) {
+                    String line;
+                    while ((line = runtimeOutputReader.readLine()) != null) {
+                        output.append(line).append("\n");
+                    }
+                }
+
+                int runtimeExitCode = runtimeProcess.waitFor();
+
+                if (runtimeExitCode != 0) {
+                    // Runtime error occurred
+                    output.insert(0, "Runtime Error:\n");
+                }
+
+                return output;
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                output.append("Internal Error during runtime");
+                return output;
+            }
         });
 
         try {
             StringBuilder result = future.get(5, TimeUnit.SECONDS); // 5 seconds timeout
-            sourceFile.delete();
             return result;
         } catch (Exception e) {
-            System.out.println("Time Out occurred ");
             future.cancel(true);
-            //System.out.println("TLE ");
             output.append("Time Limit Exceeded");
             return output;
         }
@@ -201,6 +257,7 @@ public class IDEController {
         ArrayList<Long> times = new ArrayList<>();
         // Write the Python code to a file
         File sourceFile = new File("main.py");
+        if(code.contains("import os") || code.contains("import subprocess")) return null;
         try (FileWriter writer = new FileWriter(sourceFile)) {
             writer.write(code);
         } catch (IOException e1) {
@@ -230,6 +287,11 @@ public class IDEController {
                 int i = 0;
 			    boolean flag = true;
 			    String foutput = "";
+			    while ((line = reader.readLine()) != null) {
+			    	output.append(line);
+			    	output.append("\n");
+	            }
+			    reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 			    while ((line = reader.readLine()) != null) {
 			    	output.append(line);
 			    	output.append("\n");

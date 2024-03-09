@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Main {
 
-    long mod = (long)900;
+    long mod = (long) 1e18;
     long inf = (long) (9e18);
     PrintWriter out = new PrintWriter(System.out);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -34,8 +34,9 @@ public class Main {
     void ps(long s) {out.print(s + " ");}
     void ps(double s) {out.print(s + " ");}
     void ps(char c) {out.print(c + " ");}
-    void yes() {pl("Yes");}
-    void no() {pl("No");}
+    void ps(String s) {out.print(s + " ");}
+    void yes() {pl("yes");}
+    void no() {pl("no");}
 
     long max(long a, long b) {return a > b ? a : b;}
     long min(long a, long b) {return a > b ? b : a;}
@@ -52,6 +53,7 @@ public class Main {
     long div(long x, long y) {return mul(x, inv(y));}
     long pow(long a, long b) {a %= mod;long res = 1;while (b > 0) {if ((b & 1) != 0)res = mul(res, a);a = mul(a, a);b /= 2;}return res;}
     long sqrt(long x) {long start = 0, end = (long) 3e9, ans = 1; while (start <= end) {long mid = (start + end) / 2; if (mid * mid <= x) {ans = mid;start = mid + 1;} else end = mid - 1;} return ans;}
+    boolean isSet(long x, long bit) {return ((x >> bit) & 1L) == 1L;}
 
     ArrayList<Long> lin(int n) {ArrayList<Long> a = new ArrayList<Long>(n);for (int i = 0; i < n; i++) a.add(in()); return a;}
     long sum(ArrayList<Long> a) {long sum = 0; for(long ele : a) sum += ele; return sum;}
@@ -82,7 +84,7 @@ public class Main {
     void fill(Map<Long, ArrayList<Long>> map, long a[]) {for (int i = 0; i < a.length; i++) {fill(map, a[i], i);}}
     void fill(Map<Long, ArrayList<Long>> map, long val, int i) {if (map.containsKey(val)) map.get(val).add((long) i); else {ArrayList<Long> index = new ArrayList<>();index.add((long) i);map.put(val, index);}}
     void lfill(Map<Long, Long> map, ArrayList<Long> a) {for (Map.Entry<Long, Long> entry : map.entrySet()) {long val = entry.getValue(); long key = entry.getKey();for (long j = 0; j < val; j++) a.add(key);}}
-    int MAXN = 1000001;int spf[] = new int[MAXN];
+    int MAXN = 10000001;int spf[] = new int[MAXN];
     public void sieve() {spf[1] = 1; for (int i = 2; i < MAXN; i++) spf[i] = i;for (int i = 4; i < MAXN; i += 2) spf[i] = 2;for (int i = 3; i * i < MAXN; i++) if (spf[i] == i) for (int j = i * i; j < MAXN; j += i) if (spf[j] == j) spf[j] = i;}
     public void primefactors(HashMap<Long, Long> map, int x) {while (x != 1) {fill(map, spf[x]);x /= spf[x];}}
    
@@ -107,12 +109,14 @@ public class Main {
     class Pair {long f; long s; Pair(long f, long s) {this.f = f;this.s = s;}@Override public boolean equals(Object o) {if (this == o) return true; if (o == null || getClass() != o.getClass()) return false;Pair pair = (Pair) o;return f == pair.f && s == pair.s;}@Override public int hashCode() {return Objects.hash(f, s);}}
     class SegmentTree {long[] tree; long[] nums;int n; SegmentTree(long[] nums) {this.nums = nums;this.n = nums.length;this.tree = new long[4 * n];buildTree(1, 0, n - 1);} void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start]; else {int mid = (start + end) / 2; buildTree(2 * node, start, mid); buildTree(2 * node + 1, mid + 1, end);tree[node] = tree[2 * node] + tree[2 * node + 1];}}long query(int left, int right) {return query(1, 0, n - 1, left-1, right-1);} long query(int node, int start, int end, int left, int right) {if (right < start || left > end)  return 0; else if (left <= start && right >= end) return tree[node]; else return query(2 * node, start, (start + end) / 2, left, right) + query(2 * node + 1, ((start + end) / 2) + 1, end, left, right);} void update(int index, long value) {update(1, 0, n - 1, index-1, value);} void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2; if (index >= start && index <= mid) update(2 * node, start, mid, index, value); else update(2 * node + 1, mid + 1, end, index, value);tree[node] = tree[2 * node] + tree[2 * node + 1];}}}
     class SegmentTreeMax {long[] tree; long[] nums;int n; SegmentTreeMax(long[] nums) {this.nums = nums;this.n = nums.length;this.tree = new long[4 * n];buildTree(1, 0, n - 1);} void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start]; else {int mid = (start + end) / 2; buildTree(2 * node, start, mid); buildTree(2 * node + 1, mid + 1, end);tree[node] = max(tree[2 * node] , tree[2 * node + 1]);}}long query(int left, int right) {return query(1, 0, n - 1, left-1, right-1);} long query(int node, int start, int end, int left, int right) {if (right < start || left > end)  return 0; else if (left <= start && right >= end) return tree[node]; else return max(query(2 * node, start, (start + end) / 2, left, right) , query(2 * node + 1, ((start + end) / 2) + 1, end, left, right));} void update(int index, long value) {update(1, 0, n - 1, index-1, value);} void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2; if (index >= start && index <= mid) update(2 * node, start, mid, index, value); else update(2 * node + 1, mid + 1, end, index, value);tree[node] = max(tree[2 * node] , tree[2 * node + 1]);}}}
-    class SegmentTreeMin {long[] tree; long[] nums;int n; SegmentTreeMin(long[] nums) {this.nums = nums;this.n = nums.length;this.tree = new long[4 * n];for(int i=0;i<4*n;i++) tree[i] = (long)1e9; buildTree(1, 0, n - 1);} void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start]; else {int mid = (start + end) / 2; buildTree(2 * node, start, mid); buildTree(2 * node + 1, mid + 1, end);tree[node] = min(tree[2 * node] , tree[2 * node + 1]);}}long query(int left, int right) {return query(1, 0, n - 1, left-1, right-1);} long query(int node, int start, int end, int left, int right) {if (right < start || left > end)  return (long)1e9; else if (left <= start && right >= end) return tree[node]; else return min(query(2 * node, start, (start + end) / 2, left, right) , query(2 * node + 1, ((start + end) / 2) + 1, end, left, right));} void update(int index, long value) {update(1, 0, n - 1, index-1, value);} void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2; if (index >= start && index <= mid) update(2 * node, start, mid, index, value); else update(2 * node + 1, mid + 1, end, index, value);tree[node] = tree[2 * node] + tree[2 * node + 1];}}}
+    class SegmentTreeMin {long[] tree; long[] nums;int n; SegmentTreeMin(long[] nums) {this.nums = nums;this.n = nums.length;this.tree = new long[4 * n];for(int i=0;i<4*n;i++) tree[i] = inf; buildTree(1, 0, n - 1);} void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start]; else {int mid = (start + end) / 2; buildTree(2 * node, start, mid); buildTree(2 * node + 1, mid + 1, end);tree[node] = min(tree[2 * node] , tree[2 * node + 1]);}}long query(int left, int right) {return query(1, 0, n - 1, left-1, right-1);} long query(int node, int start, int end, int left, int right) {if (right < start || left > end)  return inf; else if (left <= start && right >= end) return tree[node]; else return min(query(2 * node, start, (start + end) / 2, left, right) , query(2 * node + 1, ((start + end) / 2) + 1, end, left, right));} void update(int index, long value) {update(1, 0, n - 1, index-1, value);} void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2; if (index >= start && index <= mid) update(2 * node, start, mid, index, value); else update(2 * node + 1, mid + 1, end, index, value);tree[node] = tree[2 * node] + tree[2 * node + 1];}}}
     class FenwickTree {long[] tree;int n;FenwickTree(int size) {this.tree = new long[size + 1];this.n = size;}void update(int index, long delta) {for (;index <= n; index += index & -index) tree[index] += delta;  }long query(int index) {long sum = 0;for (; index > 0; index -= index & -index) sum += tree[index];return sum;}long query(int left, int right) {return query(right) - query(left - 1);}}
     class FenwickTreeMod {long[] tree;int n; FenwickTreeMod(int size) {this.tree = new long[size + 1];this.n = size;}void update(int index, long delta) {for (;index <= n; index += index & -index) tree[index] = add(tree[index], delta);  }long query(int index) {long sum = 0;for (; index > 0; index -= index & -index) sum = add(sum, tree[index]);return sum;}long query(int left, int right) {return sub(query(right), query(left - 1));}}
     class FenwickTree2D {long[][] bit;int n;int m;FenwickTree2D(int n, int m) {this.bit = new long[n + 1][m + 1];this.n = n;this.m = m;}void update(int x, int y, long val) {for (; x <= n; x += (x & (-x))) {for (int i = y; i <= m; i += (i & (-i))) {bit[x][i] += val;}}}long query(int x1, int y1, int x2, int y2) {return query(x2, y2) - query(x2, y1 - 1) - query(x1 - 1, y2) + query(x1 - 1, y1 - 1);}long query(int x, int y) {long ans = 0;for (int i = x; i > 0; i -= (i & (-i))) {for (int j = y; j > 0; j -= (j & (-j))) {ans += bit[i][j];}}return ans;}}
     class OfflineTree {long a[];int n;long[] tree;long[] nums;TreeMap<Long, Integer> map;OfflineTree(long[] a) {this.a = a;sort(a);map = new TreeMap<>();int ind = 0;for(int i=0;i<a.length;i++) if(!map.containsKey(a[i])) map.put(a[i], ind++);this.n = ind;tree = new long[4 * n];nums = new long[n];}void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start];else {int mid = (start + end) / 2;buildTree(2 * node, start, mid);buildTree(2 * node + 1, mid + 1, end);tree[node] = tree[2 * node] + tree[2 * node + 1];}}long query(long a, long b) {Long key1 = map.ceilingKey(a);Long key2 = map.floorKey(b);if(key1 == null || key2 == null) return 0;int index1 = map.get(key1);int index2 = map.get(key2);return query(1, 0, n - 1, index1, index2);}long query(int node, int start, int end, int left, int right) {if (right < start || left > end) return 0;else if (left <= start && right >= end) return tree[node];else return query(2 * node, start, (start + end) / 2, left, right) + query(2 * node + 1, ((start + end) / 2) + 1, end, left, right);}void update(long key, long value) {if(!map.containsKey(key)) return;int index = map.get(key);update(1, 0, n - 1, index, value);}void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2;if (index >= start && index <= mid) update(2 * node, start, mid, index, value);else update(2 * node + 1, mid + 1, end, index, value);tree[node] = tree[2 * node] + tree[2 * node + 1];}}}
     class OfflineTreeMax {long a[];int n;long[] tree;long[] nums;TreeMap<Long, Integer> map;OfflineTreeMax(long[] a) {this.a = a;sort(a);map = new TreeMap<>();int ind = 0;for(int i=0;i<a.length;i++) if(!map.containsKey(a[i])) map.put(a[i], ind++);this.n = ind;tree = new long[4 * n];nums = new long[n];}void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start];else {int mid = (start + end) / 2;buildTree(2 * node, start, mid);buildTree(2 * node + 1, mid + 1, end);tree[node] = max(tree[2 * node] , tree[2 * node + 1]);}}long query(long a, long b) {Long key1 = map.ceilingKey(a);Long key2 = map.floorKey(b);if(key1 == null || key2 == null) return 0;int index1 = map.get(key1);int index2 = map.get(key2);return query(1, 0, n - 1, index1, index2);}long query(int node, int start, int end, int left, int right) {if (right < start || left > end) return 0;else if (left <= start && right >= end) return tree[node];else return max(query(2 * node, start, (start + end) / 2, left, right) , query(2 * node + 1, ((start + end) / 2) + 1, end, left, right));}void update(long key, long value) {if(!map.containsKey(key)) return;int index = map.get(key);update(1, 0, n - 1, index, value);}void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2;if (index >= start && index <= mid) update(2 * node, start, mid, index, value);else update(2 * node + 1, mid + 1, end, index, value);tree[node] = max(tree[2 * node] , tree[2 * node + 1]);}}}
+    class OfflineTreeMin {long a[];int n;long[] tree;long[] nums;TreeMap<Long, Integer> map;OfflineTreeMin(long[] a) {this.a = a;sort(a);map = new TreeMap<>();int ind = 0;for(int i=0;i<a.length;i++) if(!map.containsKey(a[i])) map.put(a[i], ind++);this.n = ind;tree = new long[4 * n];nums = new long[n];for(int i=0;i<4*n;i++) tree[i]=-inf;}void buildTree(int node, int start, int end) {if (start == end) tree[node] = nums[start];else {int mid = (start + end) / 2;buildTree(2 * node, start, mid);buildTree(2 * node + 1, mid + 1, end);tree[node] = min(tree[2 * node] , tree[2 * node + 1]);}}long query(long a, long b) {Long key1 = map.ceilingKey(a);Long key2 = map.floorKey(b);if(key1 == null || key2 == null) return -5;int index1 = map.get(key1);int index2 = map.get(key2);return query(1, 0, n - 1, index1, index2);}long query(int node, int start, int end, int left, int right) {if (right < start || left > end) return inf;else if (left <= start && right >= end) return tree[node];else return min(query(2 * node, start, (start + end) / 2, left, right) , query(2 * node + 1, ((start + end) / 2) + 1, end, left, right));}void update(long key, long value) {if(!map.containsKey(key)) return;int index = map.get(key);update(1, 0, n - 1, index, value);}void update(int node, int start, int end, int index, long value) {if (start == end) {nums[index] = value;tree[node] = value;} else {int mid = (start + end) / 2;if (index >= start && index <= mid) update(2 * node, start, mid, index, value);else update(2 * node + 1, mid + 1, end, index, value);tree[node] = min(tree[2 * node] , tree[2 * node + 1]);}}}
+    class MissingSet {TreeSet<Long> set;TreeMap<Long, Long> superset;MissingSet() {set = new TreeSet<>();superset = new TreeMap<>();}void add(long ele) {if(!set.contains(ele)) {if(superset.containsKey(ele + 1)) {long end = superset.get(ele + 1L);superset.remove(ele + 1L);Long key = superset.lowerKey(ele);if(key == null) superset.put(ele, end);else if(superset.get(key) == ele - 1) superset.put(key, end);else superset.put(ele, end);}else {Long key = superset.lowerKey(ele);if(key == null) superset.put(ele, ele);else if(superset.get(key) == ele - 1) superset.put(key, ele);else superset.put(ele, ele);}}}long findlow(long ele) {Long key = superset.floorKey(ele);if(key == null) return -1;if(superset.get(key) >= ele) return key - 1;else return ele;}}
     
     /*
      * Remember the pain
@@ -130,25 +134,47 @@ public class Main {
     // This is where the fun begins
     public void start() {
     	int t = 1;
-    	t = ini();
+    	//t = ini();
     	while (t-- > 0) solve();
     	out.close();
-    }	
-
+    }
+    
     // This one's for you ;)
-    public void solve() {	
-    	long n = in();
-    	long k = in();
-    	long op = 1;
-    	while(true) {
-    		long first = ceil(n, 2L);
-    		if(k <= first) {
-    			pl((op*2)*(k - 1L) + op);
+    public void solve() {
+    	int n = ini();
+    	long a[] = in(n);
+    	int st = 0, ed = 0;
+    	for(int i=1;i<n;i++) {
+    		if(a[i] < a[i-1]) {
+    			PriorityQueue<Long> queue = new PriorityQueue<>();
+    			queue.add(a[i-1]);
+    			st = i-1;
+    			for(int j=i-2;j>=0;j--) {
+    				if(a[j] == a[st]) {
+    					queue.add(a[j]);
+    					st--;
+    				}
+    				else break;
+    			}
+    			for(int j=i;j<n;j++) {
+    				if(a[j] <= a[j-1]) queue.add(a[j]);
+    				if(a[j] > a[j-1] || j == n-1) {
+    					ed = j-1;
+    					if(j == n-1 && a[j] <= a[j-1]) ed = j;
+    					for(int l=st;l<=ed;l++) a[l] = queue.poll();
+    					break;
+    				}
+    			}
+    			break;
+    		}
+    	}
+    	for(int i=1;i<n;i++) {
+    		if(a[i] < a[i-1]) {
+    			no();
     			return;
     		}
-    		n -= first;
-    		k -= first;
-    		op *= 2;
     	}
-    }
-} 
+    	yes();
+    	pl((st+1) + " " + (ed+1));
+    }    
+}
